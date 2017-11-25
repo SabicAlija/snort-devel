@@ -39,6 +39,9 @@ RUN mkdir -p $DOWNLOAD_DIR && cd $DOWNLOAD_DIR && \
     wget -qO- https://pkg-config.freedesktop.org/releases/pkg-config-$PKG_CONFIG_VER.tar.gz | tar xvz && \
     wget -qO- www.zlib.net/zlib-$ZLIB_VER.tar.gz | tar xvz
 
+# Zlib
+WORKDIR $DOWNLOAD_DIR/zlib-$ZLIB_VER
+RUN ./configure && make && make install
 
 # Pkg Config
 WORKDIR $DOWNLOAD_DIR/pkg-config-$PKG_CONFIG_VER
@@ -77,17 +80,22 @@ RUN ./configure && make && make install
 WORKDIR $DOWNLOAD_DIR/libdnet
 RUN ./configure && make && make install
 
-# Zlib
-WORKDIR $DOWNLOAD_DIR/zlib-$ZLIB_VER
-RUN ./configure && make && make install
-
 # netmap
 #WORKDIR $DOWNLOAD_DIR
 #RUN git clone https://github.com/luigirizzo/netmap.git && \
 #    cd netmap && ./configure --no-drivers && make && make install
 
 # DAQ
-WORKDIR $DOWNLOAD/daq-$DAQ_VER
+# ----------------------------------------------------------------------------
+# Build AFPacket DAQ module.. : yes
+# Build Dump DAQ module...... : yes
+# Build IPFW DAQ module...... : yes
+# Build IPQ DAQ module....... : no
+# Build NFQ DAQ module....... : no
+# Build PCAP DAQ module...... : yes
+# Build netmap DAQ module.... : no
+# ----------------------------------------------------------------------------
+WORKDIR $DOWNLOAD_DIR/daq-$DAQ_VER
 RUN ./configure && make && make install
 
 # Snort 3
