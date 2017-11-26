@@ -5,8 +5,10 @@ FROM ubuntu:16.04
 ENV DOWNLOAD_DIR 	/home/temp
 ENV SNORT_DIR_AUTO	snort_auto
 ENV SNORT_DIR_CMAKE	snort_cmake
+ENV SNORT_PRJ_DIR	snort_project_cdt
 ENV SNORT_DIR		/opt/snort
 ENV SNORT_VER		3.0.0-239
+ENV SNORT_VER_M		3.0.0
 ENV SNORT_EXTRA_VER	1.0.0-239
 ENV DAQ_VER		2.2.2
 ENV HWLOC_VER		1.11.8
@@ -25,11 +27,12 @@ ENV HYPERSCAN_VER	4.5.1
 ENV LIBDNET_GIT		https://github.com/jncornett/libdnet.git
 ENV LUA_PATH		/opt/snort/include/snort/lua/\?.lua\;\;
 ENV SNORT_LUA_PATH      /opt/snort/etc/snort
-
+ENV JAVA_HOME 		/usr/lib/jvm/java-8-oracle
 
 # Needed tools
 RUN apt-get update && apt-get install -y \
-    wget
+    wget \
+    cmake-curses-gui
 
 # Snort Dependencies #######################################
 # RUN apt-get install linux-headers-$(uname -r) -y
@@ -63,10 +66,10 @@ RUN apt-get install -y \
     cmake
 
 # Documentation
-# RUN apt-get install -y \
-#    asciidoc \
-#    dblatex \
-#    source-highlight
+RUN apt-get install -y \
+    asciidoc \
+    dblatex \
+    source-highlight
     
 
 # Download packages need for snort
@@ -153,12 +156,35 @@ WORKDIR $DOWNLOAD_DIR/daq-$DAQ_VER
 RUN ./configure && make && make install && ldconfig
 
 # Snort 3
-#WORKDIR $DOWNLOAD_DIR/snort3-master
-#RUN autoreconf -isvf && ./configure --prefix=$SNORT_DIR && make && make install
-#RUN ln -s /opt/snort/bin/snort /usr/sbin/snort
+WORKDIR $DOWNLOAD_DIR/$SNORT_CMAKE_DIR/snort-$SNORT_VER_M-a4
+RUN autoreconf -isvf && ./configure_cmake.sh --prefix=$SNORT_DIR && cd build && make -j 8 install
+RUN ln -s /opt/snort/bin/snort /usr/sbin/snort
 #RUN sh -c "echo 'export LUA_PATH=/opt/snort/include/snort/lua/\?.lua\;\;' >> ~/.bashrc"
 #RUN sh -c "echo 'export SNORT_LUA_PATH=/opt/snort/etc/snort' >> ~/.bashrc
 
+# Snort Eclipse CDT Project
+WORKDIR $DOWNLOAD_DIR
+RUN mkdir $SNORT_PRJ_DIR && cd $SNORT_PRJ_DIR && \
+    cmake ../snort-$SNORT_VER_M-a4 -G"Eclipse CDT4 - Unix Makefiles"
+
+# Install java
+# add-apt-repository -y ppa:webupd8team/java && \
+RUN \
+  echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | debconf-set-selections && \
+  echo "deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main" > /etc/apt/sources.list.d/webupd8team-ubuntu-java-xenial.list && \
+  apt-get update && \
+  apt-get install -y oracle-java8-installer && \
+  rm -rf /var/lib/apt/lists/* && \
+  rm -rf /var/cache/oracle-jdk8-installer
+
+# Eclipse CDT
+WORKDIR $DOWNLOAD_DIR
+RUN wget -qO- http://eclipse.mirror.rafal.ca/technology/epp/downloads/release/oxygen/R/eclipse-cpp-oxygen-R-linux-gtk-x86_64.tar.gz | tar xvz && \
+    mv eclipse /opt/
+
+
 WORKDIR /home/$DOWNLOAD_DIR
 CMD ["/bin/bash"]
+# RUN apt-get install -y nautilus
+# CMD ["nautilus"]
 
