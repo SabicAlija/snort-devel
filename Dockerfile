@@ -32,10 +32,11 @@ ENV JAVA_HOME 		/usr/lib/jvm/java-8-oracle
 # Needed tools
 RUN apt-get update && apt-get install -y \
     wget \
-    cmake-curses-gui
+    cmake-curses-gui \
+    gdb
 
 # Snort Dependencies #######################################
-# RUN apt-get install linux-headers-$(uname -r) -y
+RUN apt-get install linux-headers-$(uname -r) -y
 
 # Prerequisites
 RUN apt-get install -y \
@@ -156,8 +157,9 @@ WORKDIR $DOWNLOAD_DIR/daq-$DAQ_VER
 RUN ./configure && make && make install && ldconfig
 
 # Snort 3
-WORKDIR $DOWNLOAD_DIR/$SNORT_CMAKE_DIR/snort-$SNORT_VER_M-a4
-RUN autoreconf -isvf && ./configure_cmake.sh --prefix=$SNORT_DIR && cd build && make -j 8 install
+WORKDIR $DOWNLOAD_DIR/$SNORT_DIR_CMAKE/snort-$SNORT_VER_M-a4
+#RUN autoreconf -isvf && ./configure_cmake.sh --prefix=$SNORT_DIR && cd build && make -j 8 install
+RUN ./configure_cmake.sh --prefix=$SNORT_DIR && cd build && make -j 8 install
 RUN ln -s /opt/snort/bin/snort /usr/sbin/snort
 #RUN sh -c "echo 'export LUA_PATH=/opt/snort/include/snort/lua/\?.lua\;\;' >> ~/.bashrc"
 #RUN sh -c "echo 'export SNORT_LUA_PATH=/opt/snort/etc/snort' >> ~/.bashrc
@@ -165,26 +167,76 @@ RUN ln -s /opt/snort/bin/snort /usr/sbin/snort
 # Snort Eclipse CDT Project
 WORKDIR $DOWNLOAD_DIR
 RUN mkdir $SNORT_PRJ_DIR && cd $SNORT_PRJ_DIR && \
-    cmake ../snort-$SNORT_VER_M-a4 -G"Eclipse CDT4 - Unix Makefiles"
+    cmake ../$SNORT_DIR_CMAKE/snort-$SNORT_VER_M-a4 -G"Eclipse CDT4 - Unix Makefiles"
 
 # Install java
 # add-apt-repository -y ppa:webupd8team/java && \
-RUN \
-  echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | debconf-set-selections && \
-  echo "deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main" > /etc/apt/sources.list.d/webupd8team-ubuntu-java-xenial.list && \
-  apt-get update && \
-  apt-get install -y oracle-java8-installer && \
-  rm -rf /var/lib/apt/lists/* && \
-  rm -rf /var/cache/oracle-jdk8-installer
+#RUN \
+#  echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | debconf-set-selections && \
+#  echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main" > /etc/apt/sources.list.d/webupd8team-ubuntu-java-xenial.list && \
+#  apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 7B2C3B0889BF5709A105D03AC2518248EEA14886 && \
+#  echo 'deb http://deb.debian.org/debian jessie-backports main' > /etc/apt/sources.list.d/jessie-backports.list && \
+#  apt-get update && \
+#  apt-get install -y oracle-java8-installer && \
+#  rm -rf /var/lib/apt/lists/* && \
+#  rm -rf /var/cache/oracle-jdk8-installer
+
+#CMD ["/bin/bash"]
+#RUN apt-get update && apt-get install -y --no-install-recommends   ca-certificates   curl   wget  && rm -rf /var/lib/apt/lists/* 
+#RUN apt-get update && apt-get install -y --no-install-recommends   bzr   git   mercurial   openssh-client   subversion     procps  && rm -rf /var/lib/apt/lists/*
+#RUN apt-get update && apt-get install -y --no-install-recommends   bzip2   unzip   xz-utils  && rm -rf /var/lib/apt/lists/*
+#RUN echo 'deb http://deb.debian.org/debian jessie-backports main' > /etc/apt/sources.list.d/jessie-backports.list 
+#ENV LANG=C.UTF-8
+#RUN {   echo '#!/bin/sh';   echo 'set -e'; \
+#        echo;   echo 'dirname "$(dirname "$(readlink -f "$(which javac || which java)")")"'; \
+#     } > /usr/local/bin/docker-java-home  && \
+#    chmod +x /usr/local/bin/docker-java-home
+#ENV JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+#ENV JAVA_VERSION=8u111
+#ENV JAVA_DEBIAN_VERSION=8u111-b14-2~bpo8+1
+#ENV CA_CERTIFICATES_JAVA_VERSION=20140324
+#RUN set -x  && apt-get update  && apt-get install -y \
+#    openjdk-8-jdk="$JAVA_DEBIAN_VERSION" \
+#    ca-certificates-java="$CA_CERTIFICATES_JAVA_VERSION"  && \
+#    rm -rf /var/lib/apt/lists/*  && [ "$JAVA_HOME" = "$(docker-java-home)" ]
+#RUN /var/lib/dpkg/info/ca-certificates-java.postinst configure
+
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y  software-properties-common && \
+    add-apt-repository ppa:webupd8team/java -y && \
+    apt-get update && \
+    echo oracle-java7-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections && \
+    apt-get install -y oracle-java8-installer && \
+    apt-get clean
+
+RUN apt-get install dbus-x11 packagekit-gtk3-module libcanberra-gtk-module -y
+
+# Replace 1000 with your user / group id
+RUN export uid=1000 gid=1000 && \
+    mkdir -p /home/developer && \
+    echo "developer:x:${uid}:${gid}:Developer,,,:/home/developer:/bin/bash" >> /etc/passwd && \
+    echo "developer:x:${uid}:" >> /etc/group && \
+    mkdir -p /etc/sudoers.d && \	
+    echo "developer ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/developer && \
+    chmod 0440 /etc/sudoers.d/developer && \
+    chown ${uid}:${gid} -R /home/developer
+
+RUN apt-get install libcanberra-gtk-module libcanberra-gtk3-module -y
 
 # Eclipse CDT
 WORKDIR $DOWNLOAD_DIR
 RUN wget -qO- http://eclipse.mirror.rafal.ca/technology/epp/downloads/release/oxygen/R/eclipse-cpp-oxygen-R-linux-gtk-x86_64.tar.gz | tar xvz && \
     mv eclipse /opt/
 
+RUN chmod 777 /home/developer
+RUN chown -R developer:developer /home/temp/$SNORT_PRJ_DIR
+RUN chmod 777 /home/temp
 
-WORKDIR /home/$DOWNLOAD_DIR
-CMD ["/bin/bash"]
+USER developer
+CMD ["/opt/eclipse/eclipse"]
+#WORKDIR /home/$DOWNLOAD_DIR
+# CMD ["/bin/bash"]
 # RUN apt-get install -y nautilus
 # CMD ["nautilus"]
 
