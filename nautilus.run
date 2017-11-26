@@ -1,0 +1,1 @@
+docker run --entrypoint nautilus -it --rm -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix snort-devel:0.2

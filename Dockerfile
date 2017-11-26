@@ -1,6 +1,7 @@
 FROM ubuntu:16.04
 
-# Partially based on https://sublimerobots.com/2017/07/installing-snort-3-b237-in-ubuntu
+# Partially based on 
+# https://sublimerobots.com/2017/07/installing-snort-3-b237-in-ubuntu
 
 ENV DOWNLOAD_DIR 	/home/temp
 ENV SNORT_DIR_AUTO	snort_auto
@@ -35,7 +36,7 @@ RUN apt-get update && apt-get install -y \
     cmake-curses-gui \
     gdb
 
-# Snort Dependencies #######################################
+# Snort Dependencies ---------------------------------------------------------/
 RUN apt-get install linux-headers-$(uname -r) -y
 
 # Prerequisites
@@ -170,37 +171,6 @@ RUN mkdir $SNORT_PRJ_DIR && cd $SNORT_PRJ_DIR && \
     cmake ../$SNORT_DIR_CMAKE/snort-$SNORT_VER_M-a4 -G"Eclipse CDT4 - Unix Makefiles"
 
 # Install java
-# add-apt-repository -y ppa:webupd8team/java && \
-#RUN \
-#  echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | debconf-set-selections && \
-#  echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main" > /etc/apt/sources.list.d/webupd8team-ubuntu-java-xenial.list && \
-#  apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 7B2C3B0889BF5709A105D03AC2518248EEA14886 && \
-#  echo 'deb http://deb.debian.org/debian jessie-backports main' > /etc/apt/sources.list.d/jessie-backports.list && \
-#  apt-get update && \
-#  apt-get install -y oracle-java8-installer && \
-#  rm -rf /var/lib/apt/lists/* && \
-#  rm -rf /var/cache/oracle-jdk8-installer
-
-#CMD ["/bin/bash"]
-#RUN apt-get update && apt-get install -y --no-install-recommends   ca-certificates   curl   wget  && rm -rf /var/lib/apt/lists/* 
-#RUN apt-get update && apt-get install -y --no-install-recommends   bzr   git   mercurial   openssh-client   subversion     procps  && rm -rf /var/lib/apt/lists/*
-#RUN apt-get update && apt-get install -y --no-install-recommends   bzip2   unzip   xz-utils  && rm -rf /var/lib/apt/lists/*
-#RUN echo 'deb http://deb.debian.org/debian jessie-backports main' > /etc/apt/sources.list.d/jessie-backports.list 
-#ENV LANG=C.UTF-8
-#RUN {   echo '#!/bin/sh';   echo 'set -e'; \
-#        echo;   echo 'dirname "$(dirname "$(readlink -f "$(which javac || which java)")")"'; \
-#     } > /usr/local/bin/docker-java-home  && \
-#    chmod +x /usr/local/bin/docker-java-home
-#ENV JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
-#ENV JAVA_VERSION=8u111
-#ENV JAVA_DEBIAN_VERSION=8u111-b14-2~bpo8+1
-#ENV CA_CERTIFICATES_JAVA_VERSION=20140324
-#RUN set -x  && apt-get update  && apt-get install -y \
-#    openjdk-8-jdk="$JAVA_DEBIAN_VERSION" \
-#    ca-certificates-java="$CA_CERTIFICATES_JAVA_VERSION"  && \
-#    rm -rf /var/lib/apt/lists/*  && [ "$JAVA_HOME" = "$(docker-java-home)" ]
-#RUN /var/lib/dpkg/info/ca-certificates-java.postinst configure
-
 RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y  software-properties-common && \
@@ -209,8 +179,6 @@ RUN apt-get update && \
     echo oracle-java7-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections && \
     apt-get install -y oracle-java8-installer && \
     apt-get clean
-
-RUN apt-get install dbus-x11 packagekit-gtk3-module libcanberra-gtk-module -y
 
 # Replace 1000 with your user / group id
 RUN export uid=1000 gid=1000 && \
@@ -222,21 +190,48 @@ RUN export uid=1000 gid=1000 && \
     chmod 0440 /etc/sudoers.d/developer && \
     chown ${uid}:${gid} -R /home/developer
 
-RUN apt-get install libcanberra-gtk-module libcanberra-gtk3-module -y
+
+# Gtk, X11
+RUN apt-get install -y \
+    dbus-x11 \
+    packagekit-gtk3-module \
+    libcanberra-gtk-module \
+    libcanberra-gtk-module \
+    libcanberra-gtk3-module
 
 # Eclipse CDT
 WORKDIR $DOWNLOAD_DIR
 RUN wget -qO- http://eclipse.mirror.rafal.ca/technology/epp/downloads/release/oxygen/R/eclipse-cpp-oxygen-R-linux-gtk-x86_64.tar.gz | tar xvz && \
     mv eclipse /opt/
 
+# Fix dbus error message
+#RUN dbus-uuidgen > /var/lib/dbus/machine-id
+ENV NO_AT_BRIDGE 1
+
+# Change permissions
 RUN chmod 777 /home/developer
 RUN chown -R developer:developer /home/temp/$SNORT_PRJ_DIR
 RUN chmod 777 /home/temp
 
+# Nautilus (File Explorer)
+RUN apt-get install -y nautilus
+
+# Setup ssh server
+#RUN apt-get install -y openssh-server && \
+#    mkdir /var/run/sshd && \
+#    echo 'root:embsys' | chpasswd && \
+#    sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+
+# SSH login fix. Otherwise user is kicked off after login
+#RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
+
+#ENV NOTVISIBLE "in user profile"
+#RUN echo "export VISIBLE=now" >> /etc/profile
+
+#EXPOSE 22
+#CMD ["/usr/sbin/sshd", "-D"]
+
+
 USER developer
-CMD ["/opt/eclipse/eclipse"]
-#WORKDIR /home/$DOWNLOAD_DIR
-# CMD ["/bin/bash"]
-# RUN apt-get install -y nautilus
-# CMD ["nautilus"]
+CMD ["/bin/bash"]
 

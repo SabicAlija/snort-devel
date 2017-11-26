@@ -1,0 +1,1 @@
+docker exec -ti snort_ide /bin/bash
