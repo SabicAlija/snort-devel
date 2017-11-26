@@ -1,1 +1,7 @@
-docker run -d -P --name snort_ide --entrypoint /opt/eclipse/eclipse -it --rm -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix alija/snort-devel:0.3
+docker run -d -P \
+  --name snort_ide \
+  --entrypoint /opt/eclipse/eclipse \
+  -it --rm -e DISPLAY=$DISPLAY \
+  -v /tmp/.X11-unix:/tmp/.X11-unix \
+  -v "$(pwd)"/workspace:/home/developer/workspace \
+  -v "$(pwd)"/snort-project:/home/developer/snort-project alija/snort-devel:0.3

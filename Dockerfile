@@ -1,8 +1,11 @@
 FROM ubuntu:16.04
 
+MAINTAINER Alija Sabic <sabic.alija@gmail.com>
+
 # Partially based on 
 # https://sublimerobots.com/2017/07/installing-snort-3-b237-in-ubuntu
 
+# Setup Environment -------------------------------------------------------------------------------------------------------/
 ENV DOWNLOAD_DIR 	/home/temp
 ENV SNORT_DIR_AUTO	snort_auto
 ENV SNORT_DIR_CMAKE	snort_cmake
@@ -29,6 +32,7 @@ ENV LIBDNET_GIT		https://github.com/jncornett/libdnet.git
 ENV LUA_PATH		/opt/snort/include/snort/lua/\?.lua\;\;
 ENV SNORT_LUA_PATH      /opt/snort/etc/snort
 ENV JAVA_HOME 		/usr/lib/jvm/java-8-oracle
+ENV ECLIPSE_SRC		http://eclipse.mirror.rafal.ca/technology/epp/downloads/release/oxygen/R/eclipse-cpp-oxygen-R-linux-gtk-x86_64.tar.gz
 
 # Replace 1000 with your user / group id
 RUN export uid=1000 gid=1000 && \
@@ -44,9 +48,10 @@ RUN export uid=1000 gid=1000 && \
 RUN apt-get update && apt-get install -y \
     wget \
     cmake-curses-gui \
-    gdb
+    gdb \
+    nautilus
 
-# Snort Dependencies ---------------------------------------------------------/
+# Snort Dependencies ------------------------------------------------------------------------------------------------------/
 RUN apt-get install linux-headers-$(uname -r) -y
 
 # Prerequisites
@@ -109,6 +114,9 @@ RUN mkdir -p $DOWNLOAD_DIR && cd $DOWNLOAD_DIR && mkdir $SNORT_DIR_AUTO && mkdir
     wget -qO- https://pkg-config.freedesktop.org/releases/pkg-config-$PKG_CONFIG_VER.tar.gz | tar xvz && \
     wget -qO- www.zlib.net/zlib-$ZLIB_VER.tar.gz | tar xvz
 
+
+# Build & Install Snort Dependencies --------------------------------------------------------------------------------------/
+
 # Zlib
 WORKDIR $DOWNLOAD_DIR/zlib-$ZLIB_VER
 RUN ./configure && make && make install
@@ -157,12 +165,13 @@ RUN mkdir hyperscan-$HYPERSCAN_VER-build && cd hyperscan-$HYPERSCAN_VER-build &&
           ../hyperscan-$HYPERSCAN_VER && \
     make && make install && ./bin/unit-hyperscan
     
-
 # netmap
 #WORKDIR $DOWNLOAD_DIR
 #RUN git clone https://github.com/luigirizzo/netmap.git && \
 #    cd netmap && ./configure --no-drivers && make && make install
 
+
+# Install Snort & DAQ -----------------------------------------------------------------------------------------------------/
 # DAQ
 WORKDIR $DOWNLOAD_DIR/daq-$DAQ_VER
 RUN ./configure && make && make install && ldconfig
@@ -175,15 +184,8 @@ RUN ln -s /opt/snort/bin/snort /usr/sbin/snort
 #RUN sh -c "echo 'export LUA_PATH=/opt/snort/include/snort/lua/\?.lua\;\;' >> ~/.bashrc"
 #RUN sh -c "echo 'export SNORT_LUA_PATH=/opt/snort/etc/snort' >> ~/.bashrc
 
-# Snort Eclipse CDT Project
-# WORKDIR $DOWNLOAD_DIR
-# RUN mkdir $SNORT_PRJ_DIR && cd $SNORT_PRJ_DIR && \
-#     cmake ../$SNORT_DIR_CMAKE/snort-$SNORT_VER_M-a4 -G"Eclipse CDT4 - Unix Makefiles"
-WORKDIR /home/developer
-RUN mkdir workspace && mkdir snort_p && \
-    cp -r $DOWNLOAD_DIR/$SNORT_DIR_CMAKE/snort-$SNORT_VER_M-a4 snort_p/src && \
-    cd snort_p && cmake src -G"Eclipse CDT4 - Unix Makefiles"
 
+# Install Java & Eclipse CDT ----------------------------------------------------------------------------------------------/
 
 # Install java
 RUN apt-get update && \
@@ -200,31 +202,48 @@ RUN apt-get install -y \
     dbus-x11 \
     packagekit-gtk3-module \
     libcanberra-gtk-module \
-    libcanberra-gtk-module \
     libcanberra-gtk3-module
 
 # Eclipse CDT
 WORKDIR $DOWNLOAD_DIR
-RUN wget -qO- http://eclipse.mirror.rafal.ca/technology/epp/downloads/release/oxygen/R/eclipse-cpp-oxygen-R-linux-gtk-x86_64.tar.gz | tar xvz && \
+RUN wget -qO- $ECLIPSE_SRC | tar xvz && \
     mv eclipse /opt/
 
 # Fix dbus error message
 #RUN dbus-uuidgen > /var/lib/dbus/machine-id
 ENV NO_AT_BRIDGE 1
 
+# Setup Eclipse Workspace -------------------------------------------------------------------------------------------------/
+# Uncomment to setup workspace and generate Eclipse CDT project with cmake, for initial setup.
+#
+# Note: remove -v "$(cmd)/snort-project:/home/developer/snort-project"
+#              -v "$(cmd)/workspace:/home/developer/workspace" 
+#       
+#       from `eclipse.run` to prevent the script from overriding the created files.
+#
+# * You can copy the project and workspace, after including it via Eclipse IDE and 
+#   comment out the section below again. 
+#
+# * Copy the two folders workspace/ and snort-project/ and add them via -v switch
+#   to the container in the `eclipse.run` startup script (example, see above).
+# -------------------------------------------------------------------------------------------------------------------------/
+# Snort Eclipse CDT Project
+# WORKDIR $DOWNLOAD_DIR
+# RUN mkdir $SNORT_PRJ_DIR && cd $SNORT_PRJ_DIR && \
+#     cmake ../$SNORT_DIR_CMAKE/snort-$SNORT_VER_M-a4 -G"Eclipse CDT4 - Unix Makefiles"
+# WORKDIR /home/developer
+# RUN mkdir workspace && mkdir snort-project && \
+#    cp -r $DOWNLOAD_DIR/$SNORT_DIR_CMAKE/snort-$SNORT_VER_M-a4 snort-project/snort-source && \
+#    cd snort-project && cmake snort-source -G"Eclipse CDT4 - Unix Makefiles"
+
 # Change permissions
 RUN chmod 777 /home/developer
-RUN chown -R developer:developer /home/temp/$SNORT_PRJ_DIR
+RUN chown -R developer:developer /home/developer
 RUN chmod 777 /home/temp
-
-# Nautilus (File Explorer)
-RUN apt-get install -y nautilus
 
 # Add Eclipse Workspace (from git repository)
 # ADD workspace /home/developer/workspace
-VOLUME workspace:/home/developer/workspace_ext
-RUN chown -R developer:developer /home/developer/workspace
-RUN chmod 777 /home/developer/workspace
+# VOLUME "$(pwd)"/workspace:/home/developer/workspace
 
 USER developer
 RUN alias ll='ls -la'
