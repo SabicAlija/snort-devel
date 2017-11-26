@@ -3,6 +3,8 @@ FROM ubuntu:16.04
 # Partially based on https://sublimerobots.com/2017/07/installing-snort-3-b237-in-ubuntu
 
 ENV DOWNLOAD_DIR 	/home/temp
+ENV SNORT_DIR_AUTO	snort_auto
+ENV SNORT_DIR_CMAKE	snort_cmake
 ENV SNORT_DIR		/opt/snort
 ENV SNORT_VER		3.0.0-239
 ENV SNORT_EXTRA_VER	1.0.0-239
@@ -71,15 +73,17 @@ RUN apt-get install -y \
 # git clone https://github.com/snortadmin/snort3.git && \
 # wget -qO- https://github.com/snortadmin/snort3/archive/master.tar.gz | tar xvz && \
 # wget -qO- https://github.com/Xiche/libdaq/archive/v$DAQ_VER.tar.gz | tar xvz && \
-RUN mkdir -p $DOWNLOAD_DIR && cd $DOWNLOAD_DIR && \
+RUN mkdir -p $DOWNLOAD_DIR && cd $DOWNLOAD_DIR && mkdir $SNORT_DIR_AUTO && mkdir $SNORT_DIR_CMAKE && \
     wget -qO- http://downloads.sourceforge.net/project/safeclib/libsafec-10052013.tar.gz | tar xvz && \
     wget -qO- http://www.colm.net/files/ragel/ragel-$RAGEL_VER.tar.gz | tar xvz && \
     wget -qO- https://dl.bintray.com/boostorg/release/$BOOST_VER/source/$BOOST_DIR.tar.gz | tar xvz && \
     wget -qO- https://github.com/01org/hyperscan/archive/v$HYPERSCAN_VER.tar.gz | tar xvz && \
+    cd $SNORT_DIR_AUTO && \
     wget -qO- https://www.snort.org/downloads/snortplus/snort-$SNORT_VER-auto.tar.gz | tar xvz && \
-    wget -qO- https://www.snort.org/downloads/snortplus/snort_extra-$SNORT_EXTRA_VER-auto.tar.gz | tar xvz && \
+    wget -qO- https://www.snort.org/downloads/snortplus/snort_extra-$SNORT_EXTRA_VER-auto.tar.gz | tar xvz && cd .. && \
+    cd $SNORT_DIR_CMAKE && \
     wget -qO- https://www.snort.org/downloads/snortplus/snort-$SNORT_VER-cmake.tar.gz | tar xvz && \
-    wget -qO- https://www.snort.org/downloads/snortplus/snort_extra-$SNORT_EXTRA_VER-cmake.tar.gz | tar xvz && \
+    wget -qO- https://www.snort.org/downloads/snortplus/snort_extra-$SNORT_EXTRA_VER-cmake.tar.gz | tar xvz && cd .. && \
     wget -qO- https://www.snort.org/downloads/snortplus/daq-$DAQ_VER.tar.gz | tar xvz && \
     git clone $LIBDNET_GIT && \
     wget -qO- https://www.open-mpi.org/software/hwloc/v1.11/downloads/hwloc-$HWLOC_VER.tar.gz | tar xvz && \
