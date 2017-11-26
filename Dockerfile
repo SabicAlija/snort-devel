@@ -30,6 +30,16 @@ ENV LUA_PATH		/opt/snort/include/snort/lua/\?.lua\;\;
 ENV SNORT_LUA_PATH      /opt/snort/etc/snort
 ENV JAVA_HOME 		/usr/lib/jvm/java-8-oracle
 
+# Replace 1000 with your user / group id
+RUN export uid=1000 gid=1000 && \
+    mkdir -p /home/developer && \
+    echo "developer:x:${uid}:${gid}:Developer,,,:/home/developer:/bin/bash" >> /etc/passwd && \
+    echo "developer:x:${uid}:" >> /etc/group && \
+    mkdir -p /etc/sudoers.d && \	
+    echo "developer ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/developer && \
+    chmod 0440 /etc/sudoers.d/developer && \
+    chown ${uid}:${gid} -R /home/developer
+
 # Needed tools
 RUN apt-get update && apt-get install -y \
     wget \
@@ -166,9 +176,14 @@ RUN ln -s /opt/snort/bin/snort /usr/sbin/snort
 #RUN sh -c "echo 'export SNORT_LUA_PATH=/opt/snort/etc/snort' >> ~/.bashrc
 
 # Snort Eclipse CDT Project
-WORKDIR $DOWNLOAD_DIR
-RUN mkdir $SNORT_PRJ_DIR && cd $SNORT_PRJ_DIR && \
-    cmake ../$SNORT_DIR_CMAKE/snort-$SNORT_VER_M-a4 -G"Eclipse CDT4 - Unix Makefiles"
+# WORKDIR $DOWNLOAD_DIR
+# RUN mkdir $SNORT_PRJ_DIR && cd $SNORT_PRJ_DIR && \
+#     cmake ../$SNORT_DIR_CMAKE/snort-$SNORT_VER_M-a4 -G"Eclipse CDT4 - Unix Makefiles"
+WORKDIR /home/developer
+RUN mkdir workspace && mkdir snort_p && \
+    cp -r $DOWNLOAD_DIR/$SNORT_DIR_CMAKE/snort-$SNORT_VER_M-a4 snort_p/src && \
+    cd snort_p && cmake src -G"Eclipse CDT4 - Unix Makefiles"
+
 
 # Install java
 RUN apt-get update && \
@@ -179,17 +194,6 @@ RUN apt-get update && \
     echo oracle-java7-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections && \
     apt-get install -y oracle-java8-installer && \
     apt-get clean
-
-# Replace 1000 with your user / group id
-RUN export uid=1000 gid=1000 && \
-    mkdir -p /home/developer && \
-    echo "developer:x:${uid}:${gid}:Developer,,,:/home/developer:/bin/bash" >> /etc/passwd && \
-    echo "developer:x:${uid}:" >> /etc/group && \
-    mkdir -p /etc/sudoers.d && \	
-    echo "developer ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/developer && \
-    chmod 0440 /etc/sudoers.d/developer && \
-    chown ${uid}:${gid} -R /home/developer
-
 
 # Gtk, X11
 RUN apt-get install -y \
@@ -216,22 +220,13 @@ RUN chmod 777 /home/temp
 # Nautilus (File Explorer)
 RUN apt-get install -y nautilus
 
-# Setup ssh server
-#RUN apt-get install -y openssh-server && \
-#    mkdir /var/run/sshd && \
-#    echo 'root:embsys' | chpasswd && \
-#    sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
-
-# SSH login fix. Otherwise user is kicked off after login
-#RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
-
-#ENV NOTVISIBLE "in user profile"
-#RUN echo "export VISIBLE=now" >> /etc/profile
-
-#EXPOSE 22
-#CMD ["/usr/sbin/sshd", "-D"]
-
+# Add Eclipse Workspace (from git repository)
+# ADD workspace /home/developer/workspace
+VOLUME workspace:/home/developer/workspace_ext
+RUN chown -R developer:developer /home/developer/workspace
+RUN chmod 777 /home/developer/workspace
 
 USER developer
+RUN alias ll='ls -la'
 CMD ["/bin/bash"]
 
