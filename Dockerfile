@@ -4,7 +4,9 @@ FROM ubuntu:16.04
 
 ENV DOWNLOAD_DIR 	/home/temp
 ENV SNORT_DIR		/opt/snort
-ENV DAQ_VER		2.2.1
+ENV SNORT_VER		3.0.0-239
+ENV SNORT_EXTRA_VER	1.0.0-239
+ENV DAQ_VER		2.2.2
 ENV HWLOC_VER		1.11.8
 ENV LUAJIT_VER		2.0.5
 ENV SSL_VER		1.1.0g
@@ -41,6 +43,10 @@ RUN apt-get install -y \
     bison \
     flex
 
+# Hyperscan Prerequisities
+RUN apt-get install -y \
+    python
+
 # for compiling source from github
 RUN apt-get install -y \
     libtool \
@@ -63,14 +69,18 @@ RUN apt-get install -y \
 
 # Download packages need for snort
 # git clone https://github.com/snortadmin/snort3.git && \
-# wget -qO- https://www.snort.org/downloads/snortplus/daq-$DAQ_VER.tar.gz | tar xvz && \
+# wget -qO- https://github.com/snortadmin/snort3/archive/master.tar.gz | tar xvz && \
+# wget -qO- https://github.com/Xiche/libdaq/archive/v$DAQ_VER.tar.gz | tar xvz && \
 RUN mkdir -p $DOWNLOAD_DIR && cd $DOWNLOAD_DIR && \
     wget -qO- http://downloads.sourceforge.net/project/safeclib/libsafec-10052013.tar.gz | tar xvz && \
     wget -qO- http://www.colm.net/files/ragel/ragel-$RAGEL_VER.tar.gz | tar xvz && \
     wget -qO- https://dl.bintray.com/boostorg/release/$BOOST_VER/source/$BOOST_DIR.tar.gz | tar xvz && \
     wget -qO- https://github.com/01org/hyperscan/archive/v$HYPERSCAN_VER.tar.gz | tar xvz && \
-    wget -qO- https://github.com/snortadmin/snort3/archive/master.tar.gz | tar xvz && \
-    wget -qO- https://github.com/Xiche/libdaq/archive/v$DAQ_VER.tar.gz | tar xvz && \
+    wget -qO- https://www.snort.org/downloads/snortplus/snort-$SNORT_VER-auto.tar.gz | tar xvz && \
+    wget -qO- https://www.snort.org/downloads/snortplus/snort_extra-$SNORT_EXTRA_VER-auto.tar.gz | tar xvz && \
+    wget -qO- https://www.snort.org/downloads/snortplus/snort-$SNORT_VER-cmake.tar.gz | tar xvz && \
+    wget -qO- https://www.snort.org/downloads/snortplus/snort_extra-$SNORT_EXTRA_VER-cmake.tar.gz | tar xvz && \
+    wget -qO- https://www.snort.org/downloads/snortplus/daq-$DAQ_VER.tar.gz | tar xvz && \
     git clone $LIBDNET_GIT && \
     wget -qO- https://www.open-mpi.org/software/hwloc/v1.11/downloads/hwloc-$HWLOC_VER.tar.gz | tar xvz && \
     wget -qO- http://luajit.org/download/LuaJIT-$LUAJIT_VER.tar.gz | tar xvz && \
@@ -126,9 +136,7 @@ RUN mkdir hyperscan-$HYPERSCAN_VER-build && cd hyperscan-$HYPERSCAN_VER-build &&
     cmake -DCMAKE_INSTALL_PREFIX=/usr/local \
           -DBOOST_ROOT=$DOWNLOAD_DIR/$BOOST_DIR/ \
           ../hyperscan-$HYPERSCAN_VER && \
-    make && make install
-
-RUN cd $DOWNLOAD_DIR/hyperscan-$HYPERSCAN_VER-build/ && ./bin/unit-hyperscan
+    make && make install && ./bin/unit-hyperscan
     
 
 # netmap
@@ -141,9 +149,9 @@ WORKDIR $DOWNLOAD_DIR/daq-$DAQ_VER
 RUN ./configure && make && make install && ldconfig
 
 # Snort 3
-WORKDIR $DOWNLOAD_DIR/snort3-master
-RUN autoreconf -isvf && ./configure --prefix=$SNORT_DIR && make && make install
-RUN ln -s /opt/snort/bin/snort /usr/sbin/snort
+#WORKDIR $DOWNLOAD_DIR/snort3-master
+#RUN autoreconf -isvf && ./configure --prefix=$SNORT_DIR && make && make install
+#RUN ln -s /opt/snort/bin/snort /usr/sbin/snort
 #RUN sh -c "echo 'export LUA_PATH=/opt/snort/include/snort/lua/\?.lua\;\;' >> ~/.bashrc"
 #RUN sh -c "echo 'export SNORT_LUA_PATH=/opt/snort/etc/snort' >> ~/.bashrc
 
