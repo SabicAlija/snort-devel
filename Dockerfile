@@ -228,22 +228,18 @@ ENV NO_AT_BRIDGE 1
 #   to the container in the `eclipse.run` startup script (example, see above).
 # -------------------------------------------------------------------------------------------------------------------------/
 # Snort Eclipse CDT Project
-# WORKDIR $DOWNLOAD_DIR
-# RUN mkdir $SNORT_PRJ_DIR && cd $SNORT_PRJ_DIR && \
-#     cmake ../$SNORT_DIR_CMAKE/snort-$SNORT_VER_M-a4 -G"Eclipse CDT4 - Unix Makefiles"
-# WORKDIR /home/developer
-# RUN mkdir workspace && mkdir snort-project && \
-#    cp -r $DOWNLOAD_DIR/$SNORT_DIR_CMAKE/snort-$SNORT_VER_M-a4 snort-project/snort-source && \
-#    cd snort-project && cmake snort-source -G"Eclipse CDT4 - Unix Makefiles"
+WORKDIR $DOWNLOAD_DIR
+RUN mkdir $SNORT_PRJ_DIR && cd $SNORT_PRJ_DIR && \
+    cmake ../$SNORT_DIR_CMAKE/snort-$SNORT_VER_M-a4 -G"Eclipse CDT4 - Unix Makefiles"
+WORKDIR /home/developer
+RUN mkdir workspace && mkdir snort-project && \
+    cp -r $DOWNLOAD_DIR/$SNORT_DIR_CMAKE/snort-$SNORT_VER_M-a4 snort-project/snort-source && \
+    cd snort-project && cmake snort-source -G"Eclipse CDT4 - Unix Makefiles"
 
 # Change permissions
 RUN chmod 777 /home/developer
 RUN chown -R developer:developer /home/developer
 RUN chmod 777 /home/temp
-
-# Add Eclipse Workspace (from git repository)
-# ADD workspace /home/developer/workspace
-# VOLUME "$(pwd)"/workspace:/home/developer/workspace
 
 USER developer
 RUN alias ll='ls -la'
