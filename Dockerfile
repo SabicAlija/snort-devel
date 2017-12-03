@@ -5,219 +5,267 @@ MAINTAINER Alija Sabic <sabic.alija@gmail.com>
 # Partially based on 
 # https://sublimerobots.com/2017/07/installing-snort-3-b237-in-ubuntu
 
-# Setup Environment -------------------------------------------------------------------------------------------------------/
-ENV DOWNLOAD_DIR 	/home/temp
-ENV SNORT_DIR_AUTO	snort_auto
-ENV SNORT_DIR_CMAKE	snort_cmake
-ENV SNORT_PRJ_DIR	snort_project_cdt
-ENV SNORT_DIR		/opt/snort
-ENV SNORT_VER		3.0.0-239
-ENV SNORT_VER_M		3.0.0
-ENV SNORT_EXTRA_VER	1.0.0-239
-ENV DAQ_VER		2.2.2
-ENV HWLOC_VER		1.11.8
-ENV LUAJIT_VER		2.0.5
-ENV SSL_VER		1.1.0g
-ENV PCAP_VER		1.8.1
-ENV PCRE_VER		8.41
-ENV PKG_CONFIG_VER	0.29.2
-ENV ZLIB_VER 		1.2.11
-ENV LIBSAFEC_VER	10052013
-ENV RAGEL_VER		6.10
-ENV BOOST_VER		1.64.0
-ENV BOOST_DIR		boost_1_64_0
-ENV HYPERSCAN_VER	4.5.1
-# ENV LIBDNET_GIT	https://github.com/dugsong/libdnet.git
-ENV LIBDNET_GIT		https://github.com/jncornett/libdnet.git
-ENV LUA_PATH		/opt/snort/include/snort/lua/\?.lua\;\;
-ENV SNORT_LUA_PATH      /opt/snort/etc/snort
-ENV JAVA_HOME 		/usr/lib/jvm/java-8-oracle
-ENV ECLIPSE_SRC		http://eclipse.mirror.rafal.ca/technology/epp/downloads/release/oxygen/R/eclipse-cpp-oxygen-R-linux-gtk-x86_64.tar.gz
+ARG UID
+ARG GID
+ARG USERNAME
+ARG GROUPNAME
+ARG DOWNLOAD_DIR
+ARG LOG_DIR
+ARG SNORT_INSTALL
+ARG SNORT_PROJECT
+ARG ECLIPSE_WORKSPACE
 
-# Replace 1000 with your user / group id
-RUN export uid=1000 gid=1000 && \
-    mkdir -p /home/developer && \
-    echo "developer:x:${uid}:${gid}:Developer,,,:/home/developer:/bin/bash" >> /etc/passwd && \
-    echo "developer:x:${uid}:" >> /etc/group && \
+# Setup Environment -------------------------------------------------------------------------------------------------------/
+ENV UID=${UID:-1000}       \
+    GID=${GID:-1000}       \
+    USERNAME=${USERNAME:-developer}            \
+    GROUPNAME=${GROUPNAME:-Developer}          \
+    DOWNLOAD_DIR=${DOWNLOAD_DIR:-/home/temp}   \
+    LOG_DIR=${LOG_DIR:-/home/logs}             \
+    SNORT_INSTALL=${SNORT_INSTALL:-/opt/snort} \
+    JAVA_HOME=/usr/lib/jvm/java-8-oracle                                \
+    NO_AT_BRIDGE=1                                                      \
+    VER_ZLIB=1.2.11        \
+    VER_PKGCFG=0.29.2      \
+    VER_PCAP=1.8.1         \
+    VER_PCRE=8.41          \
+    VER_SSL=1.1.0g         \
+    VER_LUAJIT=2.0.5       \
+    VER_HWLOC=1.11.8       \
+    VER_SAFEC=10052013     \
+    VER_BOOST=1.64.0       \
+    DIR_BOOST=boost_1_64_0 \
+    VER_RAGEL=6.10         \
+    VER_HYPERSCAN=4.5.1    \
+    VER_DAQ=2.2.2          \
+    VER_SNORT=3.0.0        \
+    VER_SNORT_EXTRA=1.0.0  \
+    VER_SNORT_SUB=240      \
+    TAG_SNORT=BUILD_240    \
+    VER_ECLIPSE=oxygen/R/eclipse-cpp-oxygen-R-linux-gtk-x86_64
+
+ENV SNORT_PROJECT=${SNORT_PROJECT:-/home/${USERNAME}/snort-project}                             \
+    ECLIPSE_WORKSPACE=${ECLIPSE_WORKSPACE:-/home/${USERNAME}/workspace}                         \
+    LUA_PATH=${SNORT_INSTALL}/include/snort/lua/\?.lua\;\;                                      \
+    SNORT_LUA_PATH=${SNORT_INSTALL}/etc/snort                                                   \
+    URL_ZLIB=www.zlib.net/zlib-${VER_ZLIB}.tar.gz                                               \
+    URL_PKGCFG=https://pkg-config.freedesktop.org/releases/pkg-config-${VER_PKGCFG}.tar.gz      \
+    URL_PCAP=http://www.tcpdump.org/release/libpcap-${VER_PCAP}.tar.gz                          \
+    URL_PCRE=ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-${VER_PCRE}.tar.gz      \
+    URL_SSL=https://www.openssl.org/source/openssl-${VER_SSL}.tar.gz                            \
+    URL_LUAJIT=http://luajit.org/download/LuaJIT-${VER_LUAJIT}.tar.gz                           \
+    URL_HWLOC=https://www.open-mpi.org/software/hwloc/v1.11/downloads/hwloc-${VER_HWLOC}.tar.gz \
+    URL_LIBDNET=https://github.com/jncornett/libdnet.git                                        \
+    URL_LIBDNET_ALT=https://github.com/dugsong/libdnet.git                                      \
+    URL_SAFEC=http://downloads.sourceforge.net/project/safeclib/libsafec-${VER_SAFEC}.tar.gz    \
+    URL_BOOST=https://dl.bintray.com/boostorg/release/${VER_BOOST}/source/${DIR_BOOST}.tar.gz   \
+    URL_RAGEL=http://www.colm.net/files/ragel/ragel-${VER_RAGEL}.tar.gz                         \
+    URL_HYPERSCAN=https://github.com/01org/hyperscan/archive/v${VER_HYPERSCAN}.tar.gz           \
+    URL_DAQ=https://www.snort.org/downloads/snortplus/daq-${VER_DAQ}.tar.gz                     \
+    URL_SNORT=https://www.snort.org/downloads/snortplus/snort-${VER_SNORT}-cmake.tar.gz         \
+    URL_SNORT_GIT=https://github.com/snortadmin/snort3.git                                      \
+    URL_SNORT_EXTRA=https://www.snort.org/downloads/snortplus/snort_extra-${VER_SNORT_EXTRA}-cmake.tar.gz \
+    URL_ECLIPSE=http://eclipse.mirror.rafal.ca/technology/epp/downloads/release/${VER_ECLIPSE}.tar.gz     \
+    DIR_ZLIB=zlib-${VER_ZLIB}                \
+    DIR_PKGCFG=pkg-config-${VER_PKGCFG}      \
+    DIR_PCAP=libpcap-${VER_PCAP}             \
+    DIR_PCRE=pcre-${VER_PCRE}                \
+    DIR_SSL=openssl-${VER_SSL}               \
+    DIR_LUAJIT=LuaJIT-${VER_LUAJIT}          \
+    DIR_HWLOC=hwloc-${VER_HWLOC}             \
+    DIR_LIBDNET=libdnet                      \
+    DIR_SAFEC=libsafec-${VER_SAFEC}          \
+    DIR_RAGEL=ragel-${VER_RAGEL}             \
+    DIR_HYPERSCAN=hyperscan-${VER_HYPERSCAN} \
+    DIR_DAQ=daq-${VER_DAQ}                   \
+    DIR_SNORT=snort-${VER_SNORT}             \
+    DIR_SNORT_GIT=snort3                     \
+    DIR_ECLIPSE=eclipse \
+    LOG_ZLIB=zlib \
+    LOG_PKGCFG=pkgcfg \
+    LOG_PCAP=pcap \
+    LOG_PCRE=pcre \
+    LOG_SSL=openssl \
+    LOG_LUAJIT=luajit \
+    LOG_HWLOC=hwloc \
+    LOG_LIBDNET=libdnet \
+    LOG_SAFEC=safec \
+    LOG_RAGEL=ragel \
+    LOG_HYPERSCAN=hyperscan \
+    LOG_DAQ=daq \
+    LOG_SNORT=snort
+
+# Create user space
+RUN mkdir -p /home/${USERNAME} && \
+    echo "${USERNAME}:x:${UID}:${GID}:${GROUPNAME},,,:/home/${USERNAME}:/bin/bash" >> /etc/passwd && \
+    echo "${USERNAME}:x:${UID}:" >> /etc/group && \
     mkdir -p /etc/sudoers.d && \	
-    echo "developer ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/developer && \
-    chmod 0440 /etc/sudoers.d/developer && \
-    chown ${uid}:${gid} -R /home/developer
+    echo "${USERNAME} ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/${USERNAME} && \
+    chmod 0440 /etc/sudoers.d/${USERNAME} && \
+    chown ${UID}:${GID} -R /home/${USERNAME} && \
+    mkdir -p ${DOWNLOAD_DIR} && mkdir -p ${LOG_DIR}
 
 # Needed tools
-RUN apt-get update && apt-get install -y \
-    wget \
-    cmake-curses-gui \
-    gdb \
-    nautilus
-
-# Snort Dependencies ------------------------------------------------------------------------------------------------------/
-RUN apt-get install linux-headers-$(uname -r) -y
-
-# Prerequisites
-RUN apt-get install -y \
-    build-essential \
-    autotools-dev \
-    libpcap-dev
-
-# DAQ Prerequisites
-RUN apt-get install -y \
-    bison \
-    flex
-
-# Hyperscan Prerequisities
-RUN apt-get install -y \
-    python
-
-# for compiling source from github
-RUN apt-get install -y \
-    libtool \
-    git \
-    autoconf
-
-# Recommended software (optional)
-RUN apt-get install -y \
-    liblzma-dev \
-    cpputest \
-    libsqlite3-dev \
-    cmake
-
-# Documentation
-RUN apt-get install -y \
-    asciidoc \
-    dblatex \
-    source-highlight
-    
-
-# Download packages need for snort
-# git clone https://github.com/snortadmin/snort3.git && \
-# wget -qO- https://github.com/snortadmin/snort3/archive/master.tar.gz | tar xvz && \
-# wget -qO- https://github.com/Xiche/libdaq/archive/v$DAQ_VER.tar.gz | tar xvz && \
-RUN mkdir -p $DOWNLOAD_DIR && cd $DOWNLOAD_DIR && mkdir $SNORT_DIR_AUTO && mkdir $SNORT_DIR_CMAKE && \
-    wget -qO- http://downloads.sourceforge.net/project/safeclib/libsafec-10052013.tar.gz | tar xvz && \
-    wget -qO- http://www.colm.net/files/ragel/ragel-$RAGEL_VER.tar.gz | tar xvz && \
-    wget -qO- https://dl.bintray.com/boostorg/release/$BOOST_VER/source/$BOOST_DIR.tar.gz | tar xvz && \
-    wget -qO- https://github.com/01org/hyperscan/archive/v$HYPERSCAN_VER.tar.gz | tar xvz && \
-    cd $SNORT_DIR_AUTO && \
-    wget -qO- https://www.snort.org/downloads/snortplus/snort-$SNORT_VER-auto.tar.gz | tar xvz && \
-    wget -qO- https://www.snort.org/downloads/snortplus/snort_extra-$SNORT_EXTRA_VER-auto.tar.gz | tar xvz && cd .. && \
-    cd $SNORT_DIR_CMAKE && \
-    wget -qO- https://www.snort.org/downloads/snortplus/snort-$SNORT_VER-cmake.tar.gz | tar xvz && \
-    wget -qO- https://www.snort.org/downloads/snortplus/snort_extra-$SNORT_EXTRA_VER-cmake.tar.gz | tar xvz && cd .. && \
-    wget -qO- https://www.snort.org/downloads/snortplus/daq-$DAQ_VER.tar.gz | tar xvz && \
-    git clone $LIBDNET_GIT && \
-    wget -qO- https://www.open-mpi.org/software/hwloc/v1.11/downloads/hwloc-$HWLOC_VER.tar.gz | tar xvz && \
-    wget -qO- http://luajit.org/download/LuaJIT-$LUAJIT_VER.tar.gz | tar xvz && \
-    wget -qO- https://www.openssl.org/source/openssl-$SSL_VER.tar.gz | tar xvz && \
-    wget -qO- http://www.tcpdump.org/release/libpcap-$PCAP_VER.tar.gz | tar xvz && \
-    wget -qO- ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-$PCRE_VER.tar.gz | tar xvz && \
-    wget -qO- https://pkg-config.freedesktop.org/releases/pkg-config-$PKG_CONFIG_VER.tar.gz | tar xvz && \
-    wget -qO- www.zlib.net/zlib-$ZLIB_VER.tar.gz | tar xvz
-
+RUN apt-get update && apt-get install -y  \
+    software-properties-common         && \
+    add-apt-repository ppa:webupd8team/java -y && \
+    echo oracle-java7-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections && \
+    apt-get update && apt-get install -y  \
+    w3m                                   \
+    wget                                  \
+    gdb                                   \
+    nautilus                              \
+    autoconf                              \
+    autotools-dev                         \
+    build-essential                       \
+    cmake                                 \
+    git-core                              \
+    bison                                 \
+    flex                                  \
+    python                                \
+    libpcap-dev                           \
+    libtool                               \
+    liblzma-dev                           \
+    libsqlite3-dev                        \
+    cpputest                              \
+    asciidoc                              \
+    source-highlight                      \
+    software-properties-common            \
+    oracle-java8-installer                \
+    dbus-x11                              \
+    packagekit-gtk3-module                \
+    libcanberra-gtk-module                \
+    libcanberra-gtk3-module            && \
+    apt-get autoremove -y && apt-get clean
+#   dblatex                               \
 
 # Build & Install Snort Dependencies --------------------------------------------------------------------------------------/
+WORKDIR ${DOWNLOAD_DIR}
 
 # Zlib
-WORKDIR $DOWNLOAD_DIR/zlib-$ZLIB_VER
-RUN ./configure && make && make install
+RUN wget -qO- ${URL_ZLIB} | tar xz && \
+    cd ${DIR_ZLIB} && \
+    ./configure  | tee ${LOG_DIR}/${LOG_ZLIB}_configure.log    2>&1 && \
+    make         | tee ${LOG_DIR}/${LOG_ZLIB}_make.log         2>&1 && \
+    make install | tee ${LOG_DIR}/${LOG_ZLIB}_make_install.log 2>&1 && \
+    cd .. && rm -rf ${DIR_ZLIB}
 
-# Pkg Config
-WORKDIR $DOWNLOAD_DIR/pkg-config-$PKG_CONFIG_VER
-RUN ./configure --with-internal-glib && make && make install
+# PkgConfig
+RUN wget -qO- ${URL_PKGCFG} | tar xz && \
+    cd ${DIR_PKGCFG} && \
+    ./configure --with-internal-glib | tee ${LOG_DIR}/${LOG_PKGCFG}_configure.log 2>&1 && \
+    make         | tee ${LOG_DIR}/${LOG_PKGCFG}_make.log                          2>&1 && \
+    make install | tee ${LOG_DIR}/${LOG_PKGCFG}_make_install.log                  2>&1 && \
+    cd .. && rm -rf ${DIR_PKGCFG}
 
 # PCAP
-WORKDIR $DOWNLOAD_DIR/libpcap-$PCAP_VER
-RUN ./configure && make && make install
+RUN wget -qO- ${URL_PCAP} | tar xz && \
+    cd ${DIR_PCAP} && \
+    ./configure  | tee ${LOG_DIR}/${LOG_PCAP}_configure.log    2>&1 && \
+    make         | tee ${LOG_DIR}/${LOG_PCAP}_make.log         2>&1 && \
+    make install | tee ${LOG_DIR}/${LOG_PCAP}_make_install.log 2>&1 && \
+    cd .. && rm -rf ${DIR_PCAP}
 
 # PCRE
-WORKDIR $DOWNLOAD_DIR/pcre-$PCRE_VER
-RUN ./configure && make && make install
+RUN wget -qO- ${URL_PCRE} | tar xz && \
+    cd ${DIR_PCRE} && \
+    ./configure  | tee ${LOG_DIR}/${LOG_PCRE}_configure.log    2>&1 && \
+    make         | tee ${LOG_DIR}/${LOG_PCRE}_make.log         2>&1 && \
+    make install | tee ${LOG_DIR}/${LOG_PCRE}_make_install.log 2>&1 && \
+    cd .. && rm -rf ${DIR_PCRE}
 
 # OpenSSL
-WORKDIR $DOWNLOAD_DIR/openssl-$SSL_VER
-RUN ./config && make && make install
+RUN wget -qO- ${URL_SSL} | tar xz && \
+    cd ${DIR_SSL} && \
+    ./config     | tee ${LOG_DIR}/${LOG_SSL}_configure.log    2>&1 && \
+    make         | tee ${LOG_DIR}/${LOG_SSL}_make.log         2>&1 && \
+    make install | tee ${LOG_DIR}/${LOG_SSL}_make_install.log 2>&1 && \
+    cd .. && rm -rf ${DIR_SSL}
 
 # LuaJIT
-WORKDIR $DOWNLOAD_DIR/LuaJIT-$LUAJIT_VER
-RUN make && make install
+RUN echo ${URL_LUAJIT} && wget -qO- ${URL_LUAJIT} | tar xz && \
+    cd ${DIR_LUAJIT} && \
+    ./configure  | tee ${LOG_DIR}/${LOG_LUAJIT}_configure.log    2>&1 && \
+    make         | tee ${LOG_DIR}/${LOG_LUAJIT}_make.log         2>&1 && \
+    make install | tee ${LOG_DIR}/${LOG_LUAJIT}_make_install.log 2>&1 && \
+    cd .. && rm -rf ${DIR_LUAJIT}
 
 # hwloc
-WORKDIR $DOWNLOAD_DIR/hwloc-$HWLOC_VER
-RUN ./configure && make && make install
+RUN wget -qO- ${URL_HWLOC} | tar xz && \
+    cd ${DIR_HWLOC} && \
+    ./configure  | tee ${LOG_DIR}/${LOG_HWLOC}_configure.log    2>&1 && \
+    make         | tee ${LOG_DIR}/${LOG_HWLOC}_make.log         2>&1 && \
+    make install | tee ${LOG_DIR}/${LOG_HWLOC}_make_install.log 2>&1 && \
+    cd .. && rm -rf ${DIR_HWLOC}
 
-# libdnet
-WORKDIR $DOWNLOAD_DIR/libdnet
-RUN ./configure && make && make install
+# lidnet
+RUN git clone ${URL_LIBDNET} && \
+    cd ${DIR_LIBDNET} && \
+    ./configure  | tee ${LOG_DIR}/${LOG_LIBDNET}_configure.log    2>&1 && \
+    make         | tee ${LOG_DIR}/${LOG_LIBDNET}_make.log         2>&1 && \
+    make install | tee ${LOG_DIR}/${LOG_LIBDNET}_make_install.log 2>&1 && \
+    cd .. && rm -rf ${DIR_LIBDNET}
 
-# libsafec
-WORKDIR $DOWNLOAD_DIR/libsafec-10052013
-RUN ./configure && make && make install
+# SafeC
+RUN wget -qO- ${URL_SAFEC} | tar xz && \
+    cd ${DIR_SAFEC} && \
+    ./configure  | tee ${LOG_DIR}/${LOG_SAFEC}_configure.log    2>&1 && \
+    make         | tee ${LOG_DIR}/${LOG_SAFEC}_make.log         2>&1 && \
+    make install | tee ${LOG_DIR}/${LOG_SAFEC}_make_install.log 2>&1 && \
+    cd .. && rm -rf ${DIR_SAFEC}
 
 # Ragel
-WORKDIR $DOWNLOAD_DIR/ragel-$RAGEL_VER
-RUN ./configure && make && make install
+RUN wget -qO- ${URL_RAGEL} | tar xz && \
+    cd ${DIR_RAGEL} && \
+    ./configure  | tee ${LOG_DIR}/${LOG_RAGEL}_configure.log    2>&1 && \
+    make         | tee ${LOG_DIR}/${LOG_RAGEL}_make.log         2>&1 && \
+    make install | tee ${LOG_DIR}/${LOG_RAGEL}_make_install.log 2>&1 && \
+    cd .. && rm -rf ${DIR_RAGEL}
 
 # Hyperscan
-WORKDIR $DOWNLOAD_DIR
-RUN mkdir hyperscan-$HYPERSCAN_VER-build && cd hyperscan-$HYPERSCAN_VER-build && \
+RUN wget -qO- ${URL_BOOST} | tar xz && \
+    wget -qO- ${URL_HYPERSCAN} | tar xz && \
+    mkdir ${DIR_HYPERSCAN}-build && cd ${DIR_HYPERSCAN}-build && \
     cmake -DCMAKE_INSTALL_PREFIX=/usr/local \
-          -DBOOST_ROOT=$DOWNLOAD_DIR/$BOOST_DIR/ \
-          ../hyperscan-$HYPERSCAN_VER && \
-    make && make install && ./bin/unit-hyperscan
-    
-# netmap
-#WORKDIR $DOWNLOAD_DIR
-#RUN git clone https://github.com/luigirizzo/netmap.git && \
-#    cd netmap && ./configure --no-drivers && make && make install
+          -DBOOST_ROOT=${DOWNLOAD_DIR}/${DIR_BOOST}/ \
+          ../${DIR_HYPERSCAN} \
+                 | tee ${LOG_DIR}/${LOG_HYPERSCAN}_configure.log    2>&1 && \
+    make         | tee ${LOG_DIR}/${LOG_HYPERSCAN}_make.log         2>&1 && \
+    make install | tee ${LOG_DIR}/${LOG_HYPERSCAN}_make_install.log 2>&1 && \
+    ./bin/unit-hyperscan && \
+    cd .. && rm -rf ${DIR_HYPERSCAN} && rm -rf ${DIR_HYPERSCAN}-build    && \
+    rm -rf ${DIR_BOOST}
 
-
-# Install Snort & DAQ -----------------------------------------------------------------------------------------------------/
 # DAQ
-WORKDIR $DOWNLOAD_DIR/daq-$DAQ_VER
-RUN ./configure && make && make install && ldconfig
+RUN wget -qO- ${URL_DAQ} | tar xz && \
+    cd ${DIR_DAQ} && \
+    ./configure  | tee ${LOG_DIR}/${LOG_DAQ}_configure.log    2>&1 && \
+    make         | tee ${LOG_DIR}/${LOG_DAQ}_make.log         2>&1 && \
+    make install | tee ${LOG_DIR}/${LOG_DAQ}_make_install.log 2>&1 && \
+    ldconfig && \
+    cd .. && rm -rf ${DIR_DAQ}
 
-# Snort 3
-WORKDIR $DOWNLOAD_DIR/$SNORT_DIR_CMAKE/snort-$SNORT_VER_M-a4
-#RUN autoreconf -isvf && ./configure_cmake.sh --prefix=$SNORT_DIR && cd build && make -j 8 install
-RUN ./configure_cmake.sh --prefix=$SNORT_DIR && cd build && make -j 8 install
-RUN ln -s /opt/snort/bin/snort /usr/sbin/snort
-#RUN sh -c "echo 'export LUA_PATH=/opt/snort/include/snort/lua/\?.lua\;\;' >> ~/.bashrc"
-#RUN sh -c "echo 'export SNORT_LUA_PATH=/opt/snort/etc/snort' >> ~/.bashrc
+# Snort
+RUN git clone ${URL_SNORT_GIT}   && \
+    cd ${DIR_SNORT_GIT}          && \
+    git checkout tags/${TAG_SNORT} && \
+    ./configure_cmake.sh --prefix=${SNORT_INSTALL} \
+                 | tee ${LOG_DIR}/${LOG_SNORT}_configure.log    2>&1 && \
+    cd build &&  \
+    make -j 8    | tee ${LOG_DIR}/${LOG_SNORT}_make.log         2>&1 && \
+    make install | tee ${LOG_DIR}/${LOG_SNORT}_make_install.log 2>&1 && \
+    ln -s ${SNORT_INSTALL}/bin/snort /usr/sbin/snort                 && \
+    cd .. && rm -rf ${DIR_SNORT_GIT}
 
+# Eclipse
+RUN wget -qO- ${URL_ECLIPSE} | tar xz && \
+    mv ${DIR_ECLIPSE} /opt/
 
-# Install Java & Eclipse CDT ----------------------------------------------------------------------------------------------/
-
-# Install java
-RUN apt-get update && \
-    apt-get upgrade -y && \
-    apt-get install -y  software-properties-common && \
-    add-apt-repository ppa:webupd8team/java -y && \
-    apt-get update && \
-    echo oracle-java7-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections && \
-    apt-get install -y oracle-java8-installer && \
-    apt-get clean
-
-# Gtk, X11
-RUN apt-get install -y \
-    dbus-x11 \
-    packagekit-gtk3-module \
-    libcanberra-gtk-module \
-    libcanberra-gtk3-module
-
-# Eclipse CDT
-WORKDIR $DOWNLOAD_DIR
-RUN wget -qO- $ECLIPSE_SRC | tar xvz && \
-    mv eclipse /opt/
-
-# Fix dbus error message
-#RUN dbus-uuidgen > /var/lib/dbus/machine-id
-ENV NO_AT_BRIDGE 1
-
-# Setup Eclipse Workspace -------------------------------------------------------------------------------------------------/
+# Create Eclipse Project (cmake) from Source-------------------------------------------------------------------------------/
 # Uncomment to setup workspace and generate Eclipse CDT project with cmake, for initial setup.
 #
-# Note: remove -v "$(cmd)/snort-project:/home/developer/snort-project"
-#              -v "$(cmd)/workspace:/home/developer/workspace" 
+# Note: remove -v "$(cmd)/<snort-project>:${SNORT_PROJECT}"
+#              -v "$(cmd)/<workspace>:${ECLIPSE_WORKSPACE}"
 #       
 #       from `eclipse.run` to prevent the script from overriding the created files.
 #
@@ -227,21 +275,25 @@ ENV NO_AT_BRIDGE 1
 # * Copy the two folders workspace/ and snort-project/ and add them via -v switch
 #   to the container in the `eclipse.run` startup script (example, see above).
 # -------------------------------------------------------------------------------------------------------------------------/
-# Snort Eclipse CDT Project
-WORKDIR $DOWNLOAD_DIR
-RUN mkdir $SNORT_PRJ_DIR && cd $SNORT_PRJ_DIR && \
-    cmake ../$SNORT_DIR_CMAKE/snort-$SNORT_VER_M-a4 -G"Eclipse CDT4 - Unix Makefiles"
-WORKDIR /home/developer
-RUN mkdir workspace && mkdir snort-project && \
-    cp -r $DOWNLOAD_DIR/$SNORT_DIR_CMAKE/snort-$SNORT_VER_M-a4 snort-project/snort-source && \
-    cd snort-project && cmake snort-source -G"Eclipse CDT4 - Unix Makefiles"
+RUN echo ${SNORT_PROJECT} && \
+    echo ${ECLIPSE_WORKSPACE} && \
+    mkdir -p ${SNORT_PROJECT}                       && \
+    mkdir -p ${ECLIPSE_WORKSPACE}                   && \
+    cd ${SNORT_PROJECT}/..                          && \
+    git clone ${URL_SNORT_GIT}                      && \
+    cd ${SNORT_PROJECT}                             && \
+    cmake -G"Eclipse CDT4 - Unix Makefiles"            \
+          -D_ECLIPSE_VERSION=4.7                       \
+          -DCMAKE_BUILD_TYPE=Debug                     \
+          -DCMAKE_ECLIPSE_GENERATE_SOURCE_PROJECT=TRUE \
+          -DCMAKE_ECLIPSE_MAKE_ARGUMENTS=-j4           \
+          ../${DIR_SNORT_GIT}
 
-# Change permissions
-RUN chmod 777 /home/developer
-RUN chown -R developer:developer /home/developer
-RUN chmod 777 /home/temp
+# Set permissions
+RUN chmod 777 /home/${USERNAME} && \
+    chown -R ${USERNAME}:${USERNAME} /home/${USERNAME} && \
+    chmod 777 ${DOWNLOAD_DIR}   && \
+    chmod 777 ${LOG_DIR}
 
-USER developer
-RUN alias ll='ls -la'
+USER ${USERNAME}
 CMD ["/bin/bash"]
-
