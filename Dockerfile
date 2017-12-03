@@ -4,6 +4,7 @@ MAINTAINER Alija Sabic <sabic.alija@gmail.com>
 
 # Partially based on 
 # https://sublimerobots.com/2017/07/installing-snort-3-b237-in-ubuntu
+# http://sublimerobots.com/tag/snort/
 
 ARG UID
 ARG GID
