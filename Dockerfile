@@ -223,18 +223,18 @@ RUN wget -qO- ${URL_RAGEL} | tar xz && \
     cd .. && rm -rf ${DIR_RAGEL}
 
 # Hyperscan
-RUN wget -qO- ${URL_BOOST} | tar xz && \
-    wget -qO- ${URL_HYPERSCAN} | tar xz && \
-    mkdir ${DIR_HYPERSCAN}-build && cd ${DIR_HYPERSCAN}-build && \
-    cmake -DCMAKE_INSTALL_PREFIX=/usr/local \
-          -DBOOST_ROOT=${DOWNLOAD_DIR}/${DIR_BOOST}/ \
-          ../${DIR_HYPERSCAN} \
-                 | tee ${LOG_DIR}/${LOG_HYPERSCAN}_configure.log    2>&1 && \
-    make         | tee ${LOG_DIR}/${LOG_HYPERSCAN}_make.log         2>&1 && \
-    make install | tee ${LOG_DIR}/${LOG_HYPERSCAN}_make_install.log 2>&1 && \
-    ./bin/unit-hyperscan && \
-    cd .. && rm -rf ${DIR_HYPERSCAN} && rm -rf ${DIR_HYPERSCAN}-build    && \
-    rm -rf ${DIR_BOOST}
+#RUN wget -qO- ${URL_BOOST} | tar xz && \
+#    wget -qO- ${URL_HYPERSCAN} | tar xz && \
+#    mkdir ${DIR_HYPERSCAN}-build && cd ${DIR_HYPERSCAN}-build && \
+#    cmake -DCMAKE_INSTALL_PREFIX=/usr/local \
+#          -DBOOST_ROOT=${DOWNLOAD_DIR}/${DIR_BOOST}/ \
+#          ../${DIR_HYPERSCAN} \
+#                 | tee ${LOG_DIR}/${LOG_HYPERSCAN}_configure.log    2>&1 && \
+#    make         | tee ${LOG_DIR}/${LOG_HYPERSCAN}_make.log         2>&1 && \
+#    make install | tee ${LOG_DIR}/${LOG_HYPERSCAN}_make_install.log 2>&1 && \
+#    ./bin/unit-hyperscan && \
+#    cd .. && rm -rf ${DIR_HYPERSCAN} && rm -rf ${DIR_HYPERSCAN}-build    && \
+#    rm -rf ${DIR_BOOST}
 
 # DAQ
 RUN wget -qO- ${URL_DAQ} | tar xz && \
